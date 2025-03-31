@@ -1,5 +1,7 @@
 use core::arch::naked_asm;
 use memory_addr::VirtAddr;
+#[cfg(feature = "fp_simd")]
+use riscv::register::sstatus::FS;
 
 /// General registers of RISC-V.
 #[allow(missing_docs)]
@@ -37,6 +39,28 @@ pub struct GeneralRegisters {
     pub t4: usize,
     pub t5: usize,
     pub t6: usize,
+}
+
+/// Floating-point registers of RISC-V.
+#[cfg(feature = "fp_simd")]
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+pub struct FpStatus {
+    /// the state of the RISC-V Floating-Point Unit (FPU)
+    pub fp: [u64; 32],
+    pub fcsr: usize,
+    pub fs: FS,
+}
+
+#[cfg(feature = "fp_simd")]
+impl Default for FpStatus {
+    fn default() -> Self {
+        Self {
+            fs: FS::Initial,
+            fp: [0; 32],
+            fcsr: 0,
+        }
+    }
 }
 
 /// Saved registers when a trap (interrupt or exception) occurs.
@@ -97,10 +121,19 @@ impl UspaceContext {
     /// Creates a new context with the given entry point, user stack pointer,
     /// and the argument.
     pub fn new(entry: usize, ustack_top: VirtAddr, arg0: usize) -> Self {
-        const SPIE: usize = 1 << 5;
-        const SUM: usize = 1 << 18;
-        // enable floating point unit for user space
-        const FS: usize = 1 << 13;
+        const BIT_SPIE: usize = 5;
+        const BIT_SUM: usize = 18;
+
+        let mut sstatus: usize = 0;
+        sstatus |= 1 << BIT_SPIE;
+        sstatus |= 1 << BIT_SUM;
+        #[cfg(feature = "fp_simd")]
+        {
+            // set the initial state of the FPU
+            const BIT_FS: usize = 13;
+            sstatus |= (FS::Initial as usize) << BIT_FS;
+        }
+
         Self(TrapFrame {
             regs: GeneralRegisters {
                 a0: arg0,
@@ -108,7 +141,7 @@ impl UspaceContext {
                 ..Default::default()
             },
             sepc: entry,
-            sstatus: SPIE | SUM | FS,
+            sstatus,
         })
     }
 
@@ -222,7 +255,8 @@ pub struct TaskContext {
     /// The `satp` register value, i.e., the page table root.
     #[cfg(feature = "uspace")]
     pub satp: memory_addr::PhysAddr,
-    // TODO: FP states
+    #[cfg(feature = "fp_simd")]
+    pub fp_status: FpStatus,
 }
 
 impl TaskContext {
@@ -237,6 +271,11 @@ impl TaskContext {
         Self {
             #[cfg(feature = "uspace")]
             satp: crate::paging::kernel_page_table_root(),
+            #[cfg(feature = "fp_simd")]
+            fp_status: FpStatus {
+                fs: FS::Initial,
+                ..Default::default()
+            },
             ..Default::default()
         }
     }
