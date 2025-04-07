@@ -212,3 +212,5 @@ pub fn cpu_init() {
     }
     set_exception_entry_base(exception_entry_base as usize);
 }
+
+core::arch::global_asm!(include_str!("signal.S"));
