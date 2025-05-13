@@ -40,6 +40,28 @@ pub struct GeneralRegisters {
     pub s8: usize,
 }
 
+/// Floating-point registers of LoongArch64.
+#[cfg(feature = "fp_simd")]
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+pub struct FpStatus {
+    /// the state of the LoongArch64 Floating-Point Unit (FPU)
+    pub fp: [u64; 32],
+    pub fcc: usize,  // 条件标志寄存器
+    pub fcsr: usize, // FCSR0寄存器,
+}
+
+#[cfg(feature = "fp_simd")]
+impl Default for FpStatus {
+    fn default() -> Self {
+        Self {
+            fp: [0; 32],
+            fcc: 0,
+            fcsr: 0, // 默认不启用浮点例外,舍入模式为RNE
+        }
+    }
+}
+
 /// Saved registers when a trap (interrupt or exception) occurs.
 #[repr(C)]
 #[derive(Debug, Default, Clone, Copy)]
@@ -272,6 +294,9 @@ pub struct TaskContext {
     #[cfg(feature = "uspace")]
     /// user page table root
     pub pgdl: usize,
+    #[cfg(feature = "fp_simd")]
+    /// Floating Point Status
+    pub fp_status: FpStatus,
 }
 
 impl TaskContext {
@@ -312,6 +337,23 @@ impl TaskContext {
                 unsafe { super::write_page_table_root0(pa!(next_ctx.pgdl)) };
             }
         }
+
+        #[cfg(feature = "fp_simd")]
+        {
+            unsafe {
+                save_fp_registers(
+                    &mut self.fp_status.fp,
+                    &mut self.fp_status.fcc,
+                    &mut self.fp_status.fcsr,
+                );
+                restore_fp_registers(
+                    &next_ctx.fp_status.fp,
+                    &next_ctx.fp_status.fcc,
+                    &next_ctx.fp_status.fcsr,
+                );
+            }
+        }
+
         unsafe { context_switch(self, next_ctx) }
     }
 }
