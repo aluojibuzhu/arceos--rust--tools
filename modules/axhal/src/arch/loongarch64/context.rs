@@ -1,4 +1,5 @@
 use core::arch::naked_asm;
+use core::mem::offset_of;
 use memory_addr::VirtAddr;
 
 /// General registers of Loongarch64.
@@ -47,8 +48,8 @@ pub struct GeneralRegisters {
 pub struct FpStatus {
     /// the state of the LoongArch64 Floating-Point Unit (FPU)
     pub fp: [u64; 32],
-    pub fcc: usize,  // 条件标志寄存器
-    pub fcsr: usize, // FCSR0寄存器
+    pub fcc: [u8; 8], // 条件标志寄存器
+    pub fcsr: usize,  // FCSR0寄存器
 }
 
 /// Saved registers when a trap (interrupt or exception) occurs.
