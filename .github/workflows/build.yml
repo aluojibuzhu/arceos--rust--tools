@@ -60,6 +60,8 @@ jobs:
       RUSTUP_TOOLCHAIN: ${{ matrix.rust-toolchain }}
     steps:
     - uses: actions/checkout@v4
+    - name: Install musl-tools
+      run: sudo apt-get update && sudo apt-get install -y musl-tools
     - uses: dtolnay/rust-toolchain@stable
       with:
         toolchain: ${{ matrix.rust-toolchain }}
@@ -104,6 +106,8 @@ jobs:
         rust-toolchain: [nightly, nightly-2025-05-20]
     steps:
     - uses: actions/checkout@v4
+    - name: Install musl-tools
+      run: sudo apt-get update && sudo apt-get install -y musl-tools
     - uses: dtolnay/rust-toolchain@stable
       with:
         toolchain: ${{ matrix.rust-toolchain }}
