@@ -24,18 +24,6 @@ jobs:
         cache-targets: false
     - name: Check rust version
       run: rustc --version --verbose
-    - uses: ./.github/workflows/actions/setup-musl
-      with:
-        arch: x86_64
-    - uses: ./.github/workflows/actions/setup-musl
-      with:
-        arch: riscv64
-    - uses: ./.github/workflows/actions/setup-musl
-      with:
-        arch: aarch64
-    - uses: ./.github/workflows/actions/setup-musl
-      with:
-        arch: loongarch64
     - name: Check code format
       if: ${{ matrix.arch == 'x86_64' }}
       continue-on-error: ${{ matrix.rust-toolchain == 'nightly' }}
@@ -60,8 +48,6 @@ jobs:
       RUSTUP_TOOLCHAIN: ${{ matrix.rust-toolchain }}
     steps:
     - uses: actions/checkout@v4
-    - name: Install musl-tools
-      run: sudo apt-get update && sudo apt-get install -y musl-tools
     - uses: dtolnay/rust-toolchain@stable
       with:
         toolchain: ${{ matrix.rust-toolchain }}
@@ -106,8 +92,6 @@ jobs:
         rust-toolchain: [nightly, nightly-2025-05-20]
     steps:
     - uses: actions/checkout@v4
-    - name: Install musl-tools
-      run: sudo apt-get update && sudo apt-get install -y musl-tools
     - uses: dtolnay/rust-toolchain@stable
       with:
         toolchain: ${{ matrix.rust-toolchain }}
@@ -161,4 +145,3 @@ jobs:
     - name: Build httpserver-c for x86_64-pc-oslab
       continue-on-error: ${{ matrix.rust-toolchain == 'nightly' }}
       run: make PLATFORM=x86_64-pc-oslab A=examples/httpserver-c FEATURES=page-alloc-4g,driver-ixgbe
-
