@@ -44,7 +44,11 @@ jobs:
       if: ${{ matrix.arch == 'x86_64' }}
       continue-on-error: ${{ matrix.rust-toolchain == 'nightly' }}
       run: make clippy
+    - name: make defconfig for ${{ matrix.arch }}
+      if: ${{ matrix.arch != 'x86_64' }}
+      run: make ARCH=${{ matrix.arch }} defconfig
     - name: Clippy for ${{ matrix.arch }}
+      if: ${{ matrix.arch != 'x86_64' }}
       continue-on-error: ${{ matrix.rust-toolchain == 'nightly' }}
       run: make clippy ARCH=${{ matrix.arch }}
 
