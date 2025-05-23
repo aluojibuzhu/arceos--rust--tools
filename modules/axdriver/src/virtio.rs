@@ -95,10 +95,10 @@ impl<D: VirtIoDevMeta> DriverProbe for VirtIoDriver<D> {
                     );
                     return None;
                 }
+            }
         }
+        None
     }
-    None
-}
 
     #[cfg(bus = "pci")]
     fn probe_pci(
