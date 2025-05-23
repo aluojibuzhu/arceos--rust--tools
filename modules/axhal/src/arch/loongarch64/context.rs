@@ -339,7 +339,39 @@ impl TaskContext {
         unsafe { context_switch(self, next_ctx) }
     }
 }
+#[cfg(feature = "fp_simd")]
+#[unsafe(naked)]
+unsafe extern "C" fn save_fp_registers(fp_status: &mut FpStatus) {
+    naked_asm!(
+        include_fp_asm_macros!(),
+        "
+        PUSH_FLOAT_REGS $a0
+        addi.d $t8, $a0, {fcc_offset}
+        SAVE_FCC $t8
+        addi.d $t8, $a0, {fcsr_offset}
+        SAVE_FCSR $t8
+        ret",
+        fcc_offset = const offset_of!(FpStatus, fcc),
+        fcsr_offset = const offset_of!(FpStatus, fcsr),
+    )
+}
 
+#[cfg(feature = "fp_simd")]
+#[unsafe(naked)]
+unsafe extern "C" fn restore_fp_registers(fp_status: &FpStatus) {
+    naked_asm!(
+        include_fp_asm_macros!(),
+        "
+        POP_FLOAT_REGS $a0
+        addi.d $t8, $a0, {fcc_offset}
+        RESTORE_FCC $t8
+        addi.d $t8, $a0, {fcsr_offset}
+        RESTORE_FCSR $t8
+        ret",
+        fcc_offset = const offset_of!(FpStatus, fcc),
+        fcsr_offset = const offset_of!(FpStatus, fcsr),
+    )
+}
 #[unsafe(naked)]
 unsafe extern "C" fn context_switch(_current_task: &mut TaskContext, _next_task: &TaskContext) {
     naked_asm!(
