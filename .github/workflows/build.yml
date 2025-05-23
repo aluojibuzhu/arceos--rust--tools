@@ -69,6 +69,8 @@ jobs:
       with:
         cache-targets: false
     - run: cargo install cargo-binutils
+    - name: make defconfig
+      run: make ARCH=${{ matrix.arch }} defconfig
     - name: Build helloworld
       continue-on-error: ${{ matrix.rust-toolchain == 'nightly' }}
       run: make ARCH=${{ matrix.arch }} A=examples/helloworld
